@@ -1,49 +1,22 @@
 pipeline {
     agent any
-
-    environment {
-        SKIP_PREFLIGHT_CHECK = "true"
-    }
+      
 
     stages {
-        stage('Clean Workspace') {
+        stage('Git checkout') {
             steps {
-                echo "Cleaning node_modules and lockfile..."
-                sh '''
-                    cd $WORKSPACE
-                    rm -rf node_modules package-lock.json
-                '''
+                // Get some code from a GitHub repository
+                git 'https://github.com/shaikhshahbazz/Trading-UI.git'
+                   }
+}
+        stage('Install npm prerequisites'){
+            steps{
+                sh'npm audit fix'
+                sh'npm install'
+                sh'npm run build'
+                sh'cd /var/lib/jenkins/workspace/Trading-ui-pipeline/build'
+                sh'pm2 --name Trading-UI start npm -- start'
             }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                echo "Installing npm packages..."
-                sh 'cd $WORKSPACE && npm install'
-            }
-        }
-
-        stage('Build Application') {
-            steps {
-                echo "Building React app..."
-                sh 'cd $WORKSPACE && npm run build'
-            }
-        }
-
-        stage('Run Application') {
-            steps {
-                echo "Starting app with PM2..."
-                sh 'cd $WORKSPACE && pm2 startOrReload ecosystem.config.js'
-            }
-        }
-    }
-
-    post {
-        failure {
-            echo "Build failed. Check logs above."
-        }
-        success {
-            echo "Build succeeded!"
         }
     }
 }
