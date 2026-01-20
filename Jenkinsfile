@@ -2,24 +2,15 @@ pipeline {
     agent any
 
     environment {
-        # Skip Create React App ESLint preflight check
         SKIP_PREFLIGHT_CHECK = "true"
-        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation'
-        PATH = "${NODEJS_HOME}/bin:${env.PATH}"
     }
 
     stages {
-        stage('Prepare Workspace') {
+        stage('Clean Workspace') {
             steps {
-                echo "Cleaning workspace and fixing permissions..."
+                echo "Cleaning node_modules and lockfile..."
                 sh '''
-                    # Go to workspace
                     cd $WORKSPACE
-
-                    # Ensure Jenkins user owns all files
-                    sudo chown -R $(whoami):$(whoami) $WORKSPACE
-
-                    # Remove old node_modules and lockfile
                     rm -rf node_modules package-lock.json
                 '''
             }
@@ -27,31 +18,22 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                echo "Installing npm dependencies..."
-                sh '''
-                    cd $WORKSPACE
-                    npm install
-                '''
+                echo "Installing npm packages..."
+                sh 'cd $WORKSPACE && npm install'
             }
         }
 
         stage('Build Application') {
             steps {
-                echo "Building React application..."
-                sh '''
-                    cd $WORKSPACE
-                    npm run build
-                '''
+                echo "Building React app..."
+                sh 'cd $WORKSPACE && npm run build'
             }
         }
 
-        stage('Run Application with PM2') {
+        stage('Run Application') {
             steps {
-                echo "Starting application with PM2..."
-                sh '''
-                    cd $WORKSPACE
-                    pm2 startOrReload ecosystem.config.js
-                '''
+                echo "Starting app with PM2..."
+                sh 'cd $WORKSPACE && pm2 startOrReload ecosystem.config.js'
             }
         }
     }
