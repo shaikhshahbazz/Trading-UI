@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'node18'
+        nodejs 'Nodejs'
     }
 
     stages {
@@ -13,9 +13,11 @@ pipeline {
             }
         }
 
-        stage('Install npm prerequisites') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
+                  node -v
+                  npm -v
                   npm install
                   npm audit fix || true
                 '''
