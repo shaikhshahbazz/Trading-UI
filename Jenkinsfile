@@ -1,44 +1,67 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'Nodejs'
+    environment {
+        # Skip Create React App ESLint preflight check
+        SKIP_PREFLIGHT_CHECK = "true"
+        NODEJS_HOME = tool name: 'NodeJS', type: 'NodeJSInstallation'
+        PATH = "${NODEJS_HOME}/bin:${env.PATH}"
     }
 
     stages {
-
-        stage('Git Checkout') {
+        stage('Prepare Workspace') {
             steps {
-                git 'https://github.com/shaikhshahbazz/Trading-UI.git'
+                echo "Cleaning workspace and fixing permissions..."
+                sh '''
+                    # Go to workspace
+                    cd $WORKSPACE
+
+                    # Ensure Jenkins user owns all files
+                    sudo chown -R $(whoami):$(whoami) $WORKSPACE
+
+                    # Remove old node_modules and lockfile
+                    rm -rf node_modules package-lock.json
+                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
+                echo "Installing npm dependencies..."
                 sh '''
-                  node -v
-                  npm -v
-                  npm install
-                  npm audit fix || true
+                    cd $WORKSPACE
+                    npm install
                 '''
             }
         }
 
         stage('Build Application') {
             steps {
-                sh 'npm run build'
+                echo "Building React application..."
+                sh '''
+                    cd $WORKSPACE
+                    npm run build
+                '''
             }
         }
 
         stage('Run Application with PM2') {
             steps {
+                echo "Starting application with PM2..."
                 sh '''
-                  npm install -g pm2
-                  pm2 delete Trading-UI || true
-                  pm2 start npm --name "Trading-UI" -- start
-                  pm2 save
+                    cd $WORKSPACE
+                    pm2 startOrReload ecosystem.config.js
                 '''
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "Build failed. Check logs above."
+        }
+        success {
+            echo "Build succeeded!"
         }
     }
 }
