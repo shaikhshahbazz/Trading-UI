@@ -7,27 +7,35 @@ pipeline {
 
     stages {
 
-        stage('Checkout SCM') {
+        stage('Git Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/shaikhshahbazz/Trading-UI.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install npm prerequisites') {
             steps {
-                sh 'npm install'
+                sh '''
+                  npm install
+                  npm audit fix || true
+                '''
             }
         }
 
-        stage('Audit & Fix') {
+        stage('Build Application') {
             steps {
-                sh 'npm audit fix || true'
+                sh 'npm run build'
             }
         }
 
-        stage('Build') {
+        stage('Run Application with PM2') {
             steps {
-                sh 'npm run build || echo "No build step defined"'
+                sh '''
+                  npm install -g pm2
+                  pm2 delete Trading-UI || true
+                  pm2 start npm --name "Trading-UI" -- start
+                  pm2 save
+                '''
             }
         }
     }
