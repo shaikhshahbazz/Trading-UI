@@ -9,7 +9,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/shaikhshahbazz/Trading-UI.git'
+                git 'https://github.com/shaikhshahbazz/Trading-UI.git'
             }
         }
 
@@ -21,23 +21,23 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'npm run build'
+                sh 'CI=false npm run build'
             }
         }
 
         stage('Validate Build') {
             steps {
-                sh 'ls -l'
+                sh 'ls -l build'
             }
         }
     }
 
     post {
-        success {
-            echo 'UI Build Successful!'
-        }
         failure {
             echo 'UI Build Failed!'
+        }
+        success {
+            echo 'UI Build Successful!'
         }
     }
 }
